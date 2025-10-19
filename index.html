@@ -1,0 +1,1443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>厘米测量大闯关</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Arial Rounded MT Bold', 'Microsoft YaHei', sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #a8e6cf 0%, #dcedc1 100%);
+            color: #2d5016;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+        
+        .container {
+            max-width: 1200px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: row;
+            gap: 30px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 25px;
+            width: 100%;
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #2d5016;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+        }
+        
+        .game-area {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .workbench {
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 20px;
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 2px solid #a8e6cf;
+            min-height: 400px;
+        }
+        
+        .workbench-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #4a7c59;
+            font-size: 1.5rem;
+        }
+        
+        .rod {
+            height: 40px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            cursor: grab;
+            transition: transform 0.3s;
+            position: absolute;
+            z-index: 10;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 0;
+            transform-origin: 0 0;
+        }
+        
+        .rod:active {
+            cursor: grabbing;
+        }
+        
+        .rod-1 {
+            background: linear-gradient(90deg, #a8e6cf, #88d3a7);
+            width: 180px; /* 6cm */
+        }
+        
+        .rod-2 {
+            background: linear-gradient(90deg, #7bcfa7, #5cb38b);
+            width: 150px; /* 5cm */
+        }
+        
+        /* 第三关的小棒样式 */
+        .rod-small {
+            height: 25px;
+            display: flex;
+            align-items: center;
+            padding: 0 5px; /* 减少内边距 */
+            cursor: grab;
+            transition: transform 0.3s;
+            position: absolute;
+            z-index: 10;
+            border: 1px solid rgba(0,0,0,0.1);
+            border-radius: 0;
+            transform-origin: 0 0;
+            justify-content: center; /* 文字居中 */
+        }
+        
+        .rod-1cm { 
+            width: 30px;  /* 1cm = 30px */
+            background: linear-gradient(90deg, #FF6B6B, #FF8E8E); 
+        }
+        .rod-2cm { 
+            width: 60px;  /* 2cm = 60px */
+            background: linear-gradient(90deg, #4ECDC4, #45B7D1); 
+        }
+        .rod-3cm { 
+            width: 90px;  /* 3cm = 90px */
+            background: linear-gradient(90deg, #FFD166, #FFB347); 
+        }
+        .rod-4cm { 
+            width: 120px; /* 4cm = 120px */
+            background: linear-gradient(90deg, #06D6A0, #00C897); 
+        }
+        .rod-5cm { 
+            width: 150px; /* 5cm = 150px */
+            background: linear-gradient(90deg, #118AB2, #0A7EA6); 
+        }
+        .rod-6cm { 
+            width: 180px; /* 6cm = 180px */
+            background: linear-gradient(90deg, #9B5DE5, #7E43C0); 
+        }
+        
+        .rod-label {
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+            font-size: 0.65rem; /* 进一步缩小字体 */
+            white-space: nowrap;
+        }
+        
+        .ruler-container {
+            width: 360px; /* 12cm (10cm刻度+左右各1cm空间) */
+            height: 80px;
+            background: #f9e9b6; /* 浅黄色 */
+            border-radius: 8px;
+            position: absolute;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            cursor: grab;
+            z-index: 5;
+            border: 1px solid #d4c18a;
+            transform-origin: 0 0;
+        }
+        
+        .ruler {
+            height: 100%;
+            width: 300px; /* 10cm */
+            background: #f9e9b6;
+            position: relative;
+            user-select: none;
+            margin: 0 auto;
+        }
+        
+        .ruler:active {
+            cursor: grabbing;
+        }
+        
+        .ruler-line {
+            position: absolute;
+            width: 1px;
+            background: #333;
+            bottom: 0;
+            height: 10% !important; /* 所有刻度线统一高度 */
+        }
+        
+        .ruler-number {
+            position: absolute;
+            bottom: 5px;
+            font-size: 14px;
+            font-weight: bold;
+            color: #333;
+            transform: translateX(-50%);
+        }
+        
+        .control-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 2px solid #a8e6cf;
+        }
+        
+        .level-buttons {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .zoom-control {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-left: 15px;
+        }
+        
+        .zoom-label {
+            font-weight: bold;
+            color: #2d5016;
+            white-space: nowrap;
+            font-size: 0.9rem;
+        }
+        
+        .zoom-slider {
+            width: 100px;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            background: linear-gradient(90deg, #4a7c59, #3a6b49);
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+            font-size: 0.9rem;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.15);
+            background: linear-gradient(90deg, #5cb38b, #4a7c59);
+        }
+        
+        button:active {
+            transform: translateY(1px);
+        }
+        
+        button.active {
+            background: linear-gradient(90deg, #2d5016, #4a7c59);
+            box-shadow: 0 0 0 2px #a8e6cf;
+        }
+        
+        .quiz-area {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+            border: 2px solid #a8e6cf;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .quiz-title {
+            color: #4a7c59;
+            margin-bottom: 20px;
+            text-align: center;
+            border-bottom: 2px solid #a8e6cf;
+            padding-bottom: 10px;
+        }
+        
+        .question {
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+            color: #2d5016;
+        }
+        
+        .options {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .option-btn {
+            width: 45px;
+            height: 45px;
+            border: none;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #a8e6cf, #88d3a7);
+            color: #2d5016;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .option-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        .option-btn.selected {
+            background: linear-gradient(135deg, #4a7c59, #3a6b49);
+            color: white;
+            box-shadow: 0 0 0 3px #a8e6cf;
+        }
+        
+        .submit-area {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .result {
+            font-size: 1.2rem;
+            font-weight: bold;
+            white-space: nowrap;
+        }
+        
+        .correct {
+            color: #4a7c59;
+        }
+        
+        .incorrect {
+            color: #e74c3c;
+        }
+        
+        .emoji {
+            font-size: 1.5rem;
+        }
+        
+        /* 抽奖按钮样式 - 在答题区内 */
+        .lottery-section {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 2px dashed #a8e6cf;
+            text-align: center;
+        }
+        
+        .lottery-btn {
+            padding: 12px 24px;
+            background: linear-gradient(90deg, #FF6B6B, #FF8E8E);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 250px;
+        }
+        
+        .lottery-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.3);
+            background: linear-gradient(90deg, #FF5252, #FF7B7B);
+        }
+        
+        #confetti-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 100;
+        }
+        
+        .success-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        
+        .success-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            max-width: 450px;
+            width: 90%;
+            z-index: 201;
+            position: relative;
+        }
+        
+        .modal-content h2 {
+            color: #4a7c59;
+            margin-bottom: 15px;
+            font-size: 1.8rem;
+        }
+        
+        .modal-content p {
+            margin-bottom: 12px;
+            font-size: 1.1rem;
+            color: #2d5016;
+            line-height: 1.5;
+        }
+        
+        .modal-btn {
+            padding: 10px 25px;
+            background: linear-gradient(90deg, #4a7c59, #3a6b49);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .modal-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+        }
+        
+        .annotation-mode {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 300;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+            display: none;
+        }
+        
+        .annotation-mode.active {
+            display: block;
+        }
+        
+        .annotation-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 250;
+        }
+        
+        .annotation-canvas.drawing {
+            pointer-events: all;
+        }
+        
+        /* 抽奖模态框样式 */
+        .lottery-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 400;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s;
+        }
+        
+        .lottery-modal.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+        
+        .lottery-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.4);
+            max-width: 450px;
+            width: 90%;
+            position: relative;
+        }
+        
+        .lottery-content h2 {
+            color: #FF6B6B;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+        
+        .lottery-number {
+            font-size: 4rem;
+            font-weight: bold;
+            color: #FF6B6B;
+            margin: 25px 0;
+            text-shadow: 3px 3px 5px rgba(0, 0, 0, 0.2);
+            height: 80px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #FFE8E8, #FFF5F5);
+            border-radius: 15px;
+            border: 3px dashed #FF6B6B;
+        }
+        
+        .lottery-result {
+            font-size: 1.3rem;
+            margin: 15px 0;
+            color: #4a7c59;
+            font-weight: bold;
+        }
+        
+        .lottery-btn-close {
+            padding: 10px 25px;
+            background: linear-gradient(90deg, #4a7c59, #3a6b49);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            margin-top: 15px;
+        }
+        
+        .lottery-btn-close:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.25);
+        }
+        
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .control-panel {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .level-buttons {
+                justify-content: center;
+            }
+            
+            .zoom-control {
+                margin-left: 0;
+                margin-top: 8px;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>厘米测量大闯关</h1>
+    </header>
+    
+    <div class="container">
+        <div class="game-area">
+            <div class="workbench">
+                <div class="workbench-title">操作台 - 拖动小棒、尺子进行测量</div>
+                
+                <!-- 小棒 -->
+                <div class="rod rod-1" data-length="6">
+                    <span class="rod-label">小棒 A</span>
+                </div>
+                <div class="rod rod-2" data-length="5">
+                    <span class="rod-label">小棒 B</span>
+                </div>
+                
+                <!-- 第三关的小棒 -->
+                <div class="rod-small rod-1cm" data-length="1">
+                    <span class="rod-label">1cm</span>
+                </div>
+                <div class="rod-small rod-2cm" data-length="2">
+                    <span class="rod-label">2cm</span>
+                </div>
+                <div class="rod-small rod-3cm" data-length="3">
+                    <span class="rod-label">3cm</span>
+                </div>
+                <div class="rod-small rod-4cm" data-length="4">
+                    <span class="rod-label">4cm</span>
+                </div>
+                <div class="rod-small rod-5cm" data-length="5">
+                    <span class="rod-label">5cm</span>
+                </div>
+                <div class="rod-small rod-6cm" data-length="6">
+                    <span class="rod-label">6cm</span>
+                </div>
+                
+                <!-- 尺子 -->
+                <div class="ruler-container" id="rulerContainer">
+                    <div class="ruler" id="ruler">
+                        <!-- 刻度尺将通过JavaScript动态生成 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div class="control-panel">
+                <div class="level-buttons">
+                    <button class="level-btn active" data-level="1">第一关</button>
+                    <button class="level-btn" data-level="2">第二关</button>
+                    <button class="level-btn" data-level="3">第三关</button>
+                    
+                    <div class="zoom-control">
+                        <span class="zoom-label">放大:</span>
+                        <input type="range" min="100" max="200" value="100" class="zoom-slider" id="zoomSlider">
+                        <span class="zoom-label" id="zoomLevel">100%</span>
+                    </div>
+                </div>
+                <div style="display: flex; gap: 8px;">
+                    <button id="resetBtn">重置位置</button>
+                    <button id="annotationBtn">批注</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="quiz-area">
+            <h2 class="quiz-title">答题区</h2>
+            <div id="quizContent">
+                <div class="question" id="question">第一关：小棒A的长度是______厘米。</div>
+                <div class="options" id="options">
+                    <!-- 选项将通过JavaScript动态生成 -->
+                </div>
+                <div class="submit-area">
+                    <button id="submitBtn">提交答案</button>
+                    <button id="retryBtn" style="display:none;">重新提交</button>
+                    <div class="result" id="result"></div>
+                    <div class="emoji" id="emoji"></div>
+                </div>
+            </div>
+            
+            <!-- 抽奖区域 - 在答题区内 -->
+            <div class="lottery-section">
+                <button class="lottery-btn" id="lotteryBtn">我想来闯关</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+    
+    <!-- 成功弹窗 -->
+    <div class="success-modal" id="successModal">
+        <div class="modal-content">
+            <h2>闯关成功！</h2>
+            <p>恭喜你完成了所有关卡！</p>
+            <p>你已经成为厘米测量的小专家！</p>
+            <button class="modal-btn" id="modalCloseBtn">继续游戏</button>
+        </div>
+    </div>
+
+    <!-- 抽奖弹窗 -->
+    <div class="lottery-modal" id="lotteryModal">
+        <div class="lottery-content">
+            <h2>幸运抽奖</h2>
+            <div class="lottery-number" id="lotteryNumber">?</div>
+            <div class="lottery-result" id="lotteryResult">抽奖中...</div>
+            <button class="lottery-btn-close" id="lotteryCloseBtn">关闭</button>
+        </div>
+    </div>
+
+    <div class="annotation-mode" id="annotationMode">
+        <h3>批注模式</h3>
+        <p>在页面上拖动鼠标进行划线标注</p>
+        <button id="exitAnnotationBtn">退出批注</button>
+    </div>
+
+    <canvas class="annotation-canvas" id="annotationCanvas"></canvas>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 游戏状态
+            const gameState = {
+                currentLevel: 1,
+                selectedRod: null,
+                rods: [
+                    { id: 'A', length: 6 },
+                    { id: 'B', length: 5 }
+                ],
+                answers: {
+                    1: 6, // 第一关正确答案
+                    2: 5, // 第二关正确答案
+                    3: [1,2,3,4,5,6] // 第三关正确答案
+                },
+                userAnswers: {
+                    1: null,
+                    2: null,
+                    3: []
+                },
+                completedLevels: {
+                    1: false,
+                    2: false,
+                    3: false
+                }
+            };
+            
+            // DOM元素
+            const ruler = document.getElementById('ruler');
+            const rulerContainer = document.getElementById('rulerContainer');
+            const levelButtons = document.querySelectorAll('.level-btn');
+            const resetBtn = document.getElementById('resetBtn');
+            const annotationBtn = document.getElementById('annotationBtn');
+            const exitAnnotationBtn = document.getElementById('exitAnnotationBtn');
+            const annotationMode = document.getElementById('annotationMode');
+            const annotationCanvas = document.getElementById('annotationCanvas');
+            const rods = document.querySelectorAll('.rod');
+            const smallRods = document.querySelectorAll('.rod-small');
+            const question = document.getElementById('question');
+            const options = document.getElementById('options');
+            const submitBtn = document.getElementById('submitBtn');
+            const retryBtn = document.getElementById('retryBtn');
+            const result = document.getElementById('result');
+            const emoji = document.getElementById('emoji');
+            const confettiCanvas = document.getElementById('confetti-canvas');
+            const successModal = document.getElementById('successModal');
+            const modalCloseBtn = document.getElementById('modalCloseBtn');
+            
+            // 抽奖相关元素
+            const lotteryBtn = document.getElementById('lotteryBtn');
+            const lotteryModal = document.getElementById('lotteryModal');
+            const lotteryNumber = document.getElementById('lotteryNumber');
+            const lotteryResult = document.getElementById('lotteryResult');
+            const lotteryCloseBtn = document.getElementById('lotteryCloseBtn');
+            
+            // 放大镜相关元素
+            const zoomSlider = document.getElementById('zoomSlider');
+            const zoomLevel = document.getElementById('zoomLevel');
+            
+            // 初始化游戏
+            initGame();
+            
+            // 事件监听
+            levelButtons.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const level = parseInt(this.getAttribute('data-level'));
+                    changeLevel(level);
+                });
+            });
+            
+            resetBtn.addEventListener('click', resetPositions);
+            submitBtn.addEventListener('click', submitAnswer);
+            retryBtn.addEventListener('click', resetQuiz);
+            modalCloseBtn.addEventListener('click', closeModal);
+            annotationBtn.addEventListener('click', startAnnotation);
+            exitAnnotationBtn.addEventListener('click', exitAnnotation);
+            
+            // 抽奖事件监听
+            lotteryBtn.addEventListener('click', startLottery);
+            lotteryCloseBtn.addEventListener('click', closeLottery);
+            
+            // 放大镜事件监听
+            zoomSlider.addEventListener('input', handleZoom);
+            
+            // 小棒点击事件 - 移除所有点击效果
+            rods.forEach(rod => {
+                rod.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                });
+            });
+            
+            smallRods.forEach(rod => {
+                rod.addEventListener('mousedown', function(e) {
+                    e.preventDefault();
+                });
+            });
+            
+            // 初始化游戏
+            function initGame() {
+                createRuler();
+                setupDragAndDrop();
+                createOptions();
+                updateRodVisibility();
+                setInitialPositions();
+            }
+            
+            // 处理缩放
+            function handleZoom() {
+                const zoomValue = parseInt(zoomSlider.value);
+                zoomLevel.textContent = zoomValue + '%';
+                
+                const scale = zoomValue / 100;
+                
+                // 只缩放尺子和小棒
+                const allRods = document.querySelectorAll('.rod, .rod-small');
+                allRods.forEach(rod => {
+                    rod.style.transform = `scale(${scale})`;
+                });
+                
+                rulerContainer.style.transform = `scale(${scale})`;
+            }
+            
+            // 设置初始位置 - 小棒和尺子底部对齐
+            function setInitialPositions() {
+                // 底部位置
+                const bottomPosition = 50;
+                
+                // 设置尺子位置
+                rulerContainer.style.right = '50px';
+                rulerContainer.style.bottom = bottomPosition + 'px';
+                
+                // 设置小棒位置 - 与尺子底部对齐
+                document.querySelector('.rod-1').style.left = '50px';
+                document.querySelector('.rod-1').style.bottom = bottomPosition + 'px';
+                
+                document.querySelector('.rod-2').style.left = '50px';
+                document.querySelector('.rod-2').style.bottom = bottomPosition + 'px';
+                
+                // 设置第三关小棒的初始位置（6cm与尺子底部对齐，间距30px）
+                const smallRodPositions = [
+                    { left: '50px', bottom: '200px' },  // 1cm
+                    { left: '50px', bottom: '170px' },  // 2cm
+                    { left: '50px', bottom: '140px' },  // 3cm
+                    { left: '50px', bottom: '110px' },  // 4cm
+                    { left: '50px', bottom: '80px' },   // 5cm
+                    { left: '50px', bottom: bottomPosition + 'px' }    // 6cm 与尺子底部对齐
+                ];
+                
+                smallRods.forEach((rod, index) => {
+                    if (index < smallRodPositions.length) {
+                        rod.style.left = smallRodPositions[index].left;
+                        rod.style.bottom = smallRodPositions[index].bottom;
+                    }
+                });
+            }
+            
+            // 更新小棒可见性
+            function updateRodVisibility() {
+                const rod1 = document.querySelector('.rod-1');
+                const rod2 = document.querySelector('.rod-2');
+                
+                // 显示/隐藏第三关的小棒
+                smallRods.forEach(rod => {
+                    if (gameState.currentLevel === 3) {
+                        rod.style.display = 'flex';
+                    } else {
+                        rod.style.display = 'none';
+                    }
+                });
+                
+                switch(gameState.currentLevel) {
+                    case 1:
+                        rod1.style.display = 'flex';
+                        rod2.style.display = 'none';
+                        break;
+                    case 2:
+                        rod1.style.display = 'none';
+                        rod2.style.display = 'flex';
+                        break;
+                    case 3:
+                        rod1.style.display = 'none';
+                        rod2.style.display = 'none';
+                        break;
+                }
+            }
+            
+            // 创建刻度尺
+            function createRuler() {
+                ruler.innerHTML = '';
+                const rulerWidth = 300; // 尺子宽度 (10cm)
+                const cmWidth = rulerWidth / 10; // 每厘米宽度
+                
+                // 根据当前关卡创建不同的刻度尺
+                for (let i = 0; i <= 10; i++) {
+                    const showNumber = getNumberForLevel(i) !== '';
+                    const showLine = shouldShowLine(i);
+                    
+                    if (showLine) {
+                        const line = document.createElement('div');
+                        line.className = 'ruler-line';
+                        line.style.left = (i * cmWidth) + 'px';
+                        // 所有刻度线统一高度为10%
+                        line.style.height = '10%';
+                        
+                        ruler.appendChild(line);
+                    }
+                    
+                    // 添加数字
+                    if (showNumber) {
+                        const number = document.createElement('div');
+                        number.className = 'ruler-number';
+                        number.textContent = getNumberForLevel(i);
+                        number.style.left = (i * cmWidth) + 'px';
+                        
+                        ruler.appendChild(number);
+                    }
+                }
+            }
+            
+            // 根据关卡获取刻度数字
+            function getNumberForLevel(i) {
+                switch(gameState.currentLevel) {
+                    case 1:
+                        return i; // 完整刻度
+                    case 2:
+                        // 部分数字脱落（去掉3、5、8）
+                        if (i === 0 || i === 1 || i === 2 || i === 4 || i === 6 || i === 7 || i === 9 || i === 10) {
+                            return i;
+                        }
+                        return '';
+                    case 3:
+                        // 只有少数刻度保留
+                        if (i === 0 || i === 1 || i === 4 || i === 6) {
+                            return i;
+                        }
+                        return '';
+                    default:
+                        return i;
+                }
+            }
+            
+            // 判断是否应该显示刻度线
+            function shouldShowLine(i) {
+                switch(gameState.currentLevel) {
+                    case 1:
+                        return true; // 完整刻度线
+                    case 2:
+                        // 部分刻度线消失（与数字消失一致）
+                        if (i === 0 || i === 1 || i === 2 || i === 4 || i === 6 || i === 7 || i === 9 || i === 10) {
+                            return true;
+                        }
+                        return false;
+                    case 3:
+                        // 只有少数刻度线保留
+                        if (i === 0 || i === 1 || i === 4 || i === 6) {
+                            return true;
+                        }
+                        return false;
+                    default:
+                        return true;
+                }
+            }
+            
+            // 创建选项
+            function createOptions() {
+                options.innerHTML = '';
+                
+                if (gameState.currentLevel === 3) {
+                    // 第三关是多选题
+                    for (let i = 1; i <= 10; i++) {
+                        const optionBtn = document.createElement('button');
+                        optionBtn.className = 'option-btn';
+                        optionBtn.textContent = i;
+                        optionBtn.dataset.value = i;
+                        
+                        optionBtn.addEventListener('click', function() {
+                            this.classList.toggle('selected');
+                            const value = parseInt(this.dataset.value);
+                            
+                            if (this.classList.contains('selected')) {
+                                if (!gameState.userAnswers[3].includes(value)) {
+                                    gameState.userAnswers[3].push(value);
+                                }
+                            } else {
+                                const index = gameState.userAnswers[3].indexOf(value);
+                                if (index > -1) {
+                                    gameState.userAnswers[3].splice(index, 1);
+                                }
+                            }
+                        });
+                        
+                        options.appendChild(optionBtn);
+                    }
+                } else {
+                    // 第一关和第二关是单选题
+                    for (let i = 1; i <= 10; i++) {
+                        const optionBtn = document.createElement('button');
+                        optionBtn.className = 'option-btn';
+                        optionBtn.textContent = i;
+                        optionBtn.dataset.value = i;
+                        
+                        optionBtn.addEventListener('click', function() {
+                            // 移除其他选项的选择状态
+                            document.querySelectorAll('.option-btn').forEach(btn => {
+                                btn.classList.remove('selected');
+                            });
+                            
+                            // 设置当前选项为选中状态
+                            this.classList.add('selected');
+                            
+                            // 更新用户答案
+                            gameState.userAnswers[gameState.currentLevel] = parseInt(this.dataset.value);
+                        });
+                        
+                        options.appendChild(optionBtn);
+                    }
+                }
+            }
+            
+            // 设置拖放功能
+            function setupDragAndDrop() {
+                // 设置小棒可拖动
+                rods.forEach(rod => {
+                    setupDraggable(rod);
+                });
+                
+                // 设置第三关小棒可拖动
+                smallRods.forEach(rod => {
+                    setupDraggable(rod);
+                });
+                
+                // 设置尺子可拖动
+                setupDraggable(rulerContainer);
+            }
+            
+            // 设置元素可拖动
+            function setupDraggable(element) {
+                let isDragging = false;
+                let startX, startY;
+                let initialLeft, initialTop;
+                let dragThreshold = 5; // 拖动阈值，避免点击时误触发拖动
+                
+                element.addEventListener('mousedown', startDrag);
+                
+                function startDrag(e) {
+                    // 检查是否是左键点击
+                    if (e.button !== 0) return;
+                    
+                    isDragging = false; // 初始状态不是拖动
+                    startX = e.clientX;
+                    startY = e.clientY;
+                    
+                    // 获取当前元素位置
+                    const computedStyle = window.getComputedStyle(element);
+                    initialLeft = parseInt(computedStyle.left) || 0;
+                    initialTop = parseInt(computedStyle.top) || 0;
+                    
+                    document.addEventListener('mousemove', checkDrag);
+                    document.addEventListener('mouseup', stopDrag);
+                    
+                    e.preventDefault();
+                }
+                
+                function checkDrag(e) {
+                    if (!isDragging) {
+                        // 检查是否达到拖动阈值
+                        const deltaX = Math.abs(e.clientX - startX);
+                        const deltaY = Math.abs(e.clientY - startY);
+                        
+                        if (deltaX > dragThreshold || deltaY > dragThreshold) {
+                            isDragging = true;
+                            // 移除点击检查，开始真正的拖动
+                            document.removeEventListener('mousemove', checkDrag);
+                            document.addEventListener('mousemove', drag);
+                        }
+                    }
+                }
+                
+                function drag(e) {
+                    if (!isDragging) return;
+                    
+                    const currentX = e.clientX;
+                    const currentY = e.clientY;
+                    const deltaX = currentX - startX;
+                    const deltaY = currentY - startY;
+                    
+                    let newLeft = initialLeft + deltaX;
+                    let newTop = initialTop + deltaY;
+                    
+                    // 限制元素移动范围
+                    const workbench = document.querySelector('.workbench');
+                    const maxLeft = workbench.offsetWidth - element.offsetWidth;
+                    const maxTop = workbench.offsetHeight - element.offsetHeight;
+                    
+                    if (newLeft < 0) newLeft = 0;
+                    if (newLeft > maxLeft) newLeft = maxLeft;
+                    if (newTop < 0) newTop = 0;
+                    if (newTop > maxTop) newTop = maxTop;
+                    
+                    element.style.left = newLeft + 'px';
+                    element.style.top = newTop + 'px';
+                }
+                
+                function stopDrag() {
+                    isDragging = false;
+                    document.removeEventListener('mousemove', checkDrag);
+                    document.removeEventListener('mousemove', drag);
+                    document.removeEventListener('mouseup', stopDrag);
+                }
+            }
+            
+            // 开始批注模式
+            function startAnnotation() {
+                annotationMode.classList.add('active');
+                annotationCanvas.classList.add('drawing');
+                
+                // 设置画布尺寸
+                annotationCanvas.width = window.innerWidth;
+                annotationCanvas.height = window.innerHeight;
+                
+                const ctx = annotationCanvas.getContext('2d');
+                let isDrawing = false;
+                let lastX = 0;
+                let lastY = 0;
+                
+                // 设置画笔样式
+                ctx.strokeStyle = '#e74c3c';
+                ctx.lineWidth = 3;
+                ctx.lineJoin = 'round';
+                ctx.lineCap = 'round';
+                
+                function startDrawing(e) {
+                    isDrawing = true;
+                    [lastX, lastY] = [e.clientX, e.clientY];
+                }
+                
+                function draw(e) {
+                    if (!isDrawing) return;
+                    
+                    ctx.beginPath();
+                    ctx.moveTo(lastX, lastY);
+                    ctx.lineTo(e.clientX, e.clientY);
+                    ctx.stroke();
+                    
+                    [lastX, lastY] = [e.clientX, e.clientY];
+                }
+                
+                function stopDrawing() {
+                    isDrawing = false;
+                }
+                
+                // 添加事件监听
+                annotationCanvas.addEventListener('mousedown', startDrawing);
+                annotationCanvas.addEventListener('mousemove', draw);
+                annotationCanvas.addEventListener('mouseup', stopDrawing);
+                annotationCanvas.addEventListener('mouseout', stopDrawing);
+            }
+            
+            // 退出批注模式
+            function exitAnnotation() {
+                annotationMode.classList.remove('active');
+                annotationCanvas.classList.remove('drawing');
+                
+                // 清除画布
+                const ctx = annotationCanvas.getContext('2d');
+                ctx.clearRect(0, 0, annotationCanvas.width, annotationCanvas.height);
+                
+                // 移除事件监听
+                annotationCanvas.removeEventListener('mousedown', startDrawing);
+                annotationCanvas.removeEventListener('mousemove', draw);
+                annotationCanvas.removeEventListener('mouseup', stopDrawing);
+                annotationCanvas.removeEventListener('mouseout', stopDrawing);
+            }
+            
+            // 开始抽奖
+            function startLottery() {
+                lotteryModal.classList.add('active');
+                lotteryNumber.textContent = '?';
+                lotteryResult.textContent = '抽奖中...';
+                
+                let counter = 0;
+                const totalNumbers = 45;
+                let finalNumber = Math.floor(Math.random() * totalNumbers) + 1;
+                
+                // 创建随机数字数组用于滚动效果
+                let randomNumbers = [];
+                for (let i = 0; i < 30; i++) {
+                    randomNumbers.push(Math.floor(Math.random() * totalNumbers) + 1);
+                }
+                randomNumbers.push(finalNumber);
+                
+                let currentIndex = 0;
+                
+                // 随机滚动效果
+                const interval = setInterval(() => {
+                    lotteryNumber.textContent = randomNumbers[currentIndex];
+                    currentIndex++;
+                    
+                    if (currentIndex >= randomNumbers.length) {
+                        clearInterval(interval);
+                        
+                        // 显示最终结果
+                        setTimeout(() => {
+                            lotteryResult.textContent = `恭喜 ${finalNumber} 号同学获得闯关机会！`;
+                            startColorfulConfetti();
+                        }, 500);
+                    }
+                }, 100);
+            }
+            
+            // 关闭抽奖弹窗
+            function closeLottery() {
+                lotteryModal.classList.remove('active');
+            }
+            
+            // 提交答案
+            function submitAnswer() {
+                const currentLevel = gameState.currentLevel;
+                const userAnswer = gameState.userAnswers[currentLevel];
+                const correctAnswer = gameState.answers[currentLevel];
+                
+                let isCorrect = false;
+                
+                if (currentLevel === 3) {
+                    // 第三关是多选题
+                    isCorrect = arraysEqual(userAnswer.sort(), correctAnswer.sort());
+                } else {
+                    // 第一关和第二关是单选题
+                    isCorrect = userAnswer === correctAnswer;
+                }
+                
+                if (isCorrect) {
+                    result.textContent = "回答正确！";
+                    result.className = "result correct";
+                    emoji.textContent = "🎉";
+                    submitBtn.style.display = "none";
+                    retryBtn.style.display = "inline-block";
+                    startColorfulConfetti();
+                    
+                    // 标记关卡完成
+                    gameState.completedLevels[currentLevel] = true;
+                    
+                    // 检查是否所有关卡都完成
+                    checkAllLevelsCompleted();
+                } else {
+                    result.textContent = "回答错误，请再试一次";
+                    result.className = "result incorrect";
+                    emoji.textContent = "😢";
+                    submitBtn.style.display = "none";
+                    retryBtn.style.display = "inline-block";
+                }
+            }
+            
+            // 检查是否所有关卡都完成
+            function checkAllLevelsCompleted() {
+                if (gameState.completedLevels[1] && gameState.completedLevels[2] && gameState.completedLevels[3]) {
+                    setTimeout(() => {
+                        successModal.classList.add('active');
+                        startColorfulConfetti();
+                    }, 1000);
+                }
+            }
+            
+            // 重置答题状态
+            function resetQuiz() {
+                result.textContent = "";
+                emoji.textContent = "";
+                submitBtn.style.display = "inline-block";
+                retryBtn.style.display = "none";
+                
+                // 重置用户答案
+                if (gameState.currentLevel === 3) {
+                    gameState.userAnswers[3] = [];
+                    document.querySelectorAll('.option-btn').forEach(btn => {
+                        btn.classList.remove('selected');
+                    });
+                } else {
+                    gameState.userAnswers[gameState.currentLevel] = null;
+                    document.querySelectorAll('.option-btn').forEach(btn => {
+                        btn.classList.remove('selected');
+                    });
+                }
+            }
+            
+            // 切换关卡
+            function changeLevel(level) {
+                gameState.currentLevel = level;
+                
+                // 更新按钮状态
+                levelButtons.forEach(btn => {
+                    if (parseInt(btn.getAttribute('data-level')) === level) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                
+                // 重新创建刻度尺
+                createRuler();
+                
+                // 重置位置
+                resetPositions();
+                
+                // 更新问题
+                updateQuestion();
+                
+                // 更新小棒可见性
+                updateRodVisibility();
+                
+                // 创建选项
+                createOptions();
+                
+                // 重置答题状态
+                resetQuiz();
+            }
+            
+            // 更新问题
+            function updateQuestion() {
+                switch(gameState.currentLevel) {
+                    case 1:
+                        question.textContent = "第一关：小棒A的长度是______厘米。";
+                        break;
+                    case 2:
+                        question.textContent = "第二关：小棒B的长度是______厘米。";
+                        break;
+                    case 3:
+                        question.textContent = "第三关：可以用这把尺子直接测量出__________厘米。";
+                        break;
+                }
+            }
+            
+            // 重置位置 - 小棒和尺子底部对齐
+            function resetPositions() {
+                // 底部位置
+                const bottomPosition = 50;
+                
+                // 重置尺子位置
+                rulerContainer.style.left = '';
+                rulerContainer.style.top = '';
+                rulerContainer.style.right = '50px';
+                rulerContainer.style.bottom = bottomPosition + 'px';
+                
+                // 重置小棒位置 - 与尺子底部对齐
+                document.querySelector('.rod-1').style.left = '50px';
+                document.querySelector('.rod-1').style.bottom = bottomPosition + 'px';
+                
+                document.querySelector('.rod-2').style.left = '50px';
+                document.querySelector('.rod-2').style.bottom = bottomPosition + 'px';
+                
+                // 重置第三关小棒位置（6cm与尺子底部对齐，间距30px）
+                const smallRodPositions = [
+                    { left: '50px', bottom: '200px' },  // 1cm
+                    { left: '50px', bottom: '170px' },  // 2cm
+                    { left: '50px', bottom: '140px' },  // 3cm
+                    { left: '50px', bottom: '110px' },  // 4cm
+                    { left: '50px', bottom: '80px' },   // 5cm
+                    { left: '50px', bottom: bottomPosition + 'px' }    // 6cm 与尺子底部对齐
+                ];
+                
+                smallRods.forEach((rod, index) => {
+                    if (index < smallRodPositions.length) {
+                        rod.style.left = smallRodPositions[index].left;
+                        rod.style.bottom = smallRodPositions[index].bottom;
+                    }
+                });
+            }
+            
+            // 比较两个数组是否相等
+            function arraysEqual(a, b) {
+                if (a === b) return true;
+                if (a == null || b == null) return false;
+                if (a.length !== b.length) return false;
+                
+                for (let i = 0; i < a.length; i++) {
+                    if (a[i] !== b[i]) return false;
+                }
+                return true;
+            }
+            
+            // 关闭成功弹窗
+            function closeModal() {
+                successModal.classList.remove('active');
+            }
+            
+            // 彩色彩带效果
+            function startColorfulConfetti() {
+                const canvas = confettiCanvas;
+                const ctx = canvas.getContext('2d');
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+                
+                const confettiPieces = [];
+                const colors = ['#4a7c59', '#3a6b49', '#2d5016', '#a8e6cf', '#dcedc1', 
+                               '#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8',
+                               '#FFD166', '#06D6A0', '#118AB2', '#EF476F', '#073B4C'];
+                
+                // 创建彩色礼花碎片
+                for (let i = 0; i < 300; i++) {
+                    confettiPieces.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height - canvas.height,
+                        size: Math.random() * 12 + 8,
+                        color: colors[Math.floor(Math.random() * colors.length)],
+                        speed: Math.random() * 4 + 3,
+                        angle: Math.random() * 360,
+                        spin: Math.random() * 10 - 5
+                    });
+                }
+                
+                function animateConfetti() {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    
+                    let activePieces = 0;
+                    
+                    confettiPieces.forEach(piece => {
+                        piece.y += piece.speed;
+                        piece.x += Math.sin(piece.angle * Math.PI / 180) * 2;
+                        piece.angle += piece.spin;
+                        
+                        if (piece.y < canvas.height) {
+                            activePieces++;
+                            
+                            ctx.save();
+                            ctx.translate(piece.x, piece.y);
+                            ctx.rotate(piece.angle * Math.PI / 180);
+                            ctx.fillStyle = piece.color;
+                            ctx.fillRect(-piece.size/2, -piece.size/2, piece.size, piece.size);
+                            ctx.restore();
+                        }
+                    });
+                    
+                    if (activePieces > 0) {
+                        requestAnimationFrame(animateConfetti);
+                    }
+                }
+                
+                animateConfetti();
+            }
+        });
+    </script>
+</body>
+</html>
